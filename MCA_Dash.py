@@ -30,7 +30,7 @@ color_map = {
 
 # Initialize the Dash app
 app = dash.Dash(__name__)
-
+server=app.server
 # Define the layout of the app
 app.layout = html.Div(children=[
     html.H1(children='MCA-Interactive Multi-Graph Dashboard', style={'textAlign': 'center', 'color': '#003366'}),
@@ -272,4 +272,4 @@ def open_browser():
 if __name__ == '__main__':
     # Run the Dash app in a separate thread
     threading.Timer(1, open_browser).start()
-    app.run_server(debug=True, port=8057)
+    app.run_server(debug=True)
