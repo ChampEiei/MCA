@@ -14,7 +14,7 @@ df_melted = df_melted.dropna(subset=['P&L Type'])
 pl_type_options = [{'label': pl_type, 'value': pl_type} for pl_type in df_all['P&L Type'].unique()]
 
 # Load the cost structure data
-cost = pd.read_excel("D:/seminar/Cost_structure.xlsx")
+cost = pd.read_excel("Cost_structure.xlsx")
 cost = pd.melt(cost, id_vars='P&L_types', var_name='Expense_type', value_name='Expense_amount')
 
 # Prepare options for cost structure filter
