@@ -1,8 +1,9 @@
-dash==2.6.0
+dash
 plotly
 pandas
 openpyxl
 gunicorn
 prophet
-Flask==2.2.0
-Werkzeug==2.0.3
+Flask
+Werkzeug
+--upgrade pip
