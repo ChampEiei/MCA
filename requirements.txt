@@ -4,3 +4,4 @@ pandas
 openpyxl
 gunicorn
 prophet
+Flask==2.2.0
