@@ -5,14 +5,14 @@ import plotly.express as px
 import pandas as pd
 
 # Load and prepare data
-df_all=pd.read_excel("https://github.com/ChampEiei/MCA/main/%E0%B8%AA%E0%B8%A1%E0%B8%9A%E0%B8%B9%E0%B8%A3%E0%B8%93%E0%B9%8C.xlsx")
-df_melted=pd.read_excel("https://github.com/ChampEiei/MCA/main/melted.xlsx")
+df_all=pd.read_excel("https://raw.githubusercontent.com/ChampEiei/MCA/main/%E0%B8%AA%E0%B8%A1%E0%B8%9A%E0%B8%B9%E0%B8%A3%E0%B8%93%E0%B9%8C.xlsx")
+df_melted = pd.read_excel("https://raw.githubusercontent.com/ChampEiei/MCA/main/melted.xlsx")
 df_all = df_all.dropna(subset=['P&L Type'])
 df_melted = df_melted.dropna(subset=['P&L Type'])
 pl_type_options = [{'label': pl_type, 'value': pl_type} for pl_type in df_all['P&L Type'].unique()]
 
 # Load the cost structure data
-cost = pd.read_excel("https://github.com/ChampEiei/MCA/main/Cost_structure.xlsx")
+cost = pd.read_excel("https://raw.githubusercontent.com/ChampEiei/MCA/main/Cost_structure.xlsx")
 cost = pd.melt(cost, id_vars='P&L_types', var_name='Expense_type', value_name='Expense_amount')
 
 # Prepare options for cost structure filter
