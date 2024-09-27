@@ -5,3 +5,4 @@ openpyxl
 gunicorn
 prophet
 Flask==2.2.0
+Werkzeug==2.0.3
