@@ -267,8 +267,7 @@ def update_graphs(selected_pl_types, start_date, end_date, selected_cost_pl_type
 
     return scatter_fig, pie_fig, bar_fig, monthly_bar_fig, fig_Project_Type, fig_margin, fig_cost, sunburst_fig, table_data
 
-def open_browser():
-    webbrowser.open_new("http://localhost:8057/")
+
 
 if __name__ == '__main__':
     # Run the Dash app in a separate thread
