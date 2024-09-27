@@ -5,7 +5,7 @@ import plotly.express as px
 import pandas as pd
 
 # Load and prepare data
-df_all=pd.read_excel("https://github.com/ChampEiei/MCA/main/สมบูรณ์.xlsxx")
+df_all=pd.read_excel("https://github.com/ChampEiei/MCA/main/%E0%B8%AA%E0%B8%A1%E0%B8%9A%E0%B8%B9%E0%B8%A3%E0%B8%93%E0%B9%8C.xlsx")
 df_melted=pd.read_excel("https://github.com/ChampEiei/MCA/main/melted.xlsx")
 df_all = df_all.dropna(subset=['P&L Type'])
 df_melted = df_melted.dropna(subset=['P&L Type'])
