@@ -6,4 +6,4 @@ gunicorn
 prophet
 Flask
 Werkzeug
---upgrade pip
+
