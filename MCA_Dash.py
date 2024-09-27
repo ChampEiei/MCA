@@ -3,8 +3,6 @@ from dash import dcc, html, dash_table
 from dash.dependencies import Input, Output
 import plotly.express as px
 import pandas as pd
-import webbrowser
-import threading
 
 # Load and prepare data
 df_all=pd.read_excel("สมบูรณ์.xlsx")
@@ -29,7 +27,7 @@ color_map = {
 }
 
 # Initialize the Dash app
-app = dash(__name__)
+app = Dash(__name__)
 server = app.server
 
 # Define the layout of the app
@@ -270,6 +268,4 @@ def update_graphs(selected_pl_types, start_date, end_date, selected_cost_pl_type
 
 
 if __name__ == '__main__':
-    # Run the Dash app in a separate thread
-    threading.Timer(1, open_browser).start()
     app.run_server(debug=True)
