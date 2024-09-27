@@ -6,4 +6,5 @@ gunicorn
 prophet
 Flask
 Werkzeug
+statsmodels
 
