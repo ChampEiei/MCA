@@ -29,7 +29,7 @@ color_map = {
 }
 
 # Initialize the Dash app
-app = Dash(__name__)
+app = dash(__name__)
 server = app.server
 
 # Define the layout of the app
