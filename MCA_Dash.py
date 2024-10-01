@@ -5,7 +5,7 @@ import plotly.express as px
 import pandas as pd
 
 # Load and prepare data
-df_all=pd.read_excel("https://raw.githubusercontent.com/ChampEiei/MCA/main/%E0%B8%AA%E0%B8%A1%E0%B8%9A%E0%B8%B9%E0%B8%A3%E0%B8%93%E0%B9%8C.xlsx")
+df_all = pd.read_excel("https://raw.githubusercontent.com/ChampEiei/MCA/main/%E0%B8%AA%E0%B8%A1%E0%B8%9A%E0%B8%B9%E0%B8%A3%E0%B8%93%E0%B9%8C.xlsx")
 df_melted = pd.read_excel("https://raw.githubusercontent.com/ChampEiei/MCA/main/melted.xlsx")
 df_all = df_all.dropna(subset=['P&L Type'])
 df_melted = df_melted.dropna(subset=['P&L Type'])
@@ -256,10 +256,22 @@ def update_graphs(selected_pl_types, start_date, end_date, selected_cost_pl_type
         
     )
 
+    # ฟังก์ชันฟอร์แมตตัวเลขให้มีเครื่องหมายคอมม่า
+    def format_number(value):
+        if isinstance(value, (int, float)):
+            return f"{value:,.2f}"  # ฟอร์แมตให้เป็นทศนิยม 2 ตำแหน่ง
+        return value
+
     # Create group_mar DataFrame
     group_mar = filtered_df_all.groupby(['P&L Type'])[['margin', 'Total Revenue In year']].sum().reset_index()
     group_mar['margin ratio'] = group_mar['margin'] / group_mar['Total Revenue In year']
     group_mar = group_mar[group_mar['P&L Type'] != 'Others']
+
+    # ฟอร์แมตค่าใน group_mar ก่อนใส่ในตาราง
+    group_mar['margin'] = group_mar['margin'].apply(format_number)
+    group_mar['Total Revenue In year'] = group_mar['Total Revenue In year'].apply(format_number)
+    group_mar['margin ratio'] = group_mar['margin ratio'].apply(lambda x: f"{x:.2%}")  # แสดงเป็นเปอร์เซ็นต์
+
     # Update table data
     table_data = group_mar.to_dict('records')
 
