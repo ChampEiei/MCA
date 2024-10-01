@@ -21,7 +21,7 @@ cost_pl_type_options = [{'label': pl_type, 'value': pl_type} for pl_type in cost
 # Define color map
 color_map = {
     'บริการจัดกิจกรรมแสดงสินค้าและดิจิทัล': '#00CADC',
-    'บริการบรรจุและจัดส่งสินค้า': '#7E80E7',
+    'บริการบรรจุและจัดส่งสินค้า': '#F64DB5',
     'บริการพนักงานแนะนำสินค้า': '#9B57CC',
     'บริการจัดเรียงสินค้า': '#65A6FA'
 }
@@ -250,7 +250,7 @@ def update_graphs(selected_pl_types, start_date, end_date, selected_cost_pl_type
         title='Sunburst Chart of Cost Structure',
         color='P&L_types',
         color_discrete_map={'จัดกิจกรรมทางการตลาดและดิจิทัล': '#00CADC',
- 'บรรจุและจัดส่งสินค้า': '#7E80E7',
+ 'บรรจุและจัดส่งสินค้า': '#F64DB5',
  'พนักงานแนะนำสินค้า': '#9B57CC',
  'จัดเรียงสินค้า': '#65A6FA'}
         
