@@ -1,24 +1,21 @@
-from dash import Dash 
-from dash import dcc, html, dash_table
+from dash import Dash, dcc, html, dash_table
 from dash.dependencies import Input, Output
 import plotly.express as px
 import pandas as pd
+import threading
 
-# Load and prepare data
+# Load and prepare data for MCA app
 df_all = pd.read_excel("https://raw.githubusercontent.com/ChampEiei/MCA/main/%E0%B8%AA%E0%B8%A1%E0%B8%9A%E0%B8%B9%E0%B8%A3%E0%B8%93%E0%B9%8C.xlsx")
 df_melted = pd.read_excel("https://raw.githubusercontent.com/ChampEiei/MCA/main/melted.xlsx")
 df_all = df_all.dropna(subset=['P&L Type'])
 df_melted = df_melted.dropna(subset=['P&L Type'])
 pl_type_options = [{'label': pl_type, 'value': pl_type} for pl_type in df_all['P&L Type'].unique()]
 
-# Load the cost structure data
 cost = pd.read_excel("https://raw.githubusercontent.com/ChampEiei/MCA/main/Cost_structure.xlsx")
 cost = pd.melt(cost, id_vars='P&L_types', var_name='Expense_type', value_name='Expense_amount')
 
-# Prepare options for cost structure filter
 cost_pl_type_options = [{'label': pl_type, 'value': pl_type} for pl_type in cost['P&L_types'].unique()]
 
-# Define color map
 color_map = {
     'บริการจัดกิจกรรมแสดงสินค้าและดิจิทัล': '#00CADC',
     'บริการบรรจุและจัดส่งสินค้า': '#F64DB5',
@@ -26,137 +23,96 @@ color_map = {
     'บริการจัดเรียงสินค้า': '#65A6FA'
 }
 
+# Load and prepare data for RFM app
+rfm = pd.read_excel('RFM.xlsx')
+k_range = range(1, 11)
+sse=[428.99999999999994, 245.30411208806478, 133.78674291671692, 107.4648386269977,
+     88.31541170025612, 67.55134545296497, 48.897540405130165, 43.52660193638751,
+     41.30611529443592, 28.31420745735582]
+
+fig_elbow = px.line(x=k_range, y=sse, markers=True, title='Elbow Method For Optimal k')
+fig_elbow.update_layout(xaxis_title='Number of Clusters', yaxis_title='SSE')
+
+fig_scatter = px.scatter_matrix(rfm, dimensions=['Recency', 'Frequency', 'Monetary'], color='Cluster', title='Cluster Scatter Matrix')
+
+group = rfm.groupby(['Cluster'])['Monetary'].sum().reset_index()
+fig_bar = px.bar(group, x='Cluster', y='Monetary', color='Cluster', title='Total Monetary by Cluster')
+
+fig_monetary_vs_frequency = px.scatter(rfm, x='Frequency', y='Monetary', color='Cluster', size='Monetary',
+                                       title='Monetary vs Frequency Scatter Plot', size_max=100)
+
 # Initialize the Dash app
 app = Dash(__name__)
 server = app.server
 
-# Define the layout of the app
-app.layout = html.Div(children=[
-    html.H1(children='MCA-Interactive Multi-Graph Dashboard', style={'textAlign': 'center', 'color': '#003366'}),
-
-    html.Div(children=''' Margin by Sector and Customer. ''', style={'textAlign': 'center', 'color': '#003366'}),
-
-    # Dropdown for filtering by P&L Type
-    html.Div(
-        children=[
-            dcc.Dropdown(
-                id='pl-type-filter',
-                options=pl_type_options,
-                value=[pl_type['value'] for pl_type in pl_type_options],
-                multi=True,
-                style={'width': '60%', 'margin': 'auto'}
-            )
-        ],
-        style={'padding': '10px'}
-    ),
-
-    # DatePicker for filtering by date range
-    html.Div(
-        children=[
-            dcc.DatePickerRange(
-                id='date-picker-range',
-                start_date=df_all['Start Date'].min(),
-                end_date=df_all['Start Date'].max(),
-                display_format='YYYY-MM-DD',
-                style={'width': '60%', 'margin': 'auto'}
-            )
-        ],
-        style={'padding': '10px'}
-    ),
-
-    # Container for the graphs
-    html.Div(
-        children=[
+# Define the combined layout
+app.layout = html.Div([
+    # MCA Layout Section
+    html.Div(children=[
+        html.H1(children='MCA-Interactive Multi-Graph Dashboard', style={'textAlign': 'center', 'color': '#003366'}),
+        html.Div(children='Margin by Sector and Customer.', style={'textAlign': 'center', 'color': '#003366'}),
+        dcc.Dropdown(id='pl-type-filter', options=pl_type_options, value=[pl_type['value'] for pl_type in pl_type_options], multi=True, style={'width': '60%', 'margin': 'auto'}),
+        dcc.DatePickerRange(id='date-picker-range', start_date=df_all['Start Date'].min(), end_date=df_all['Start Date'].max(), display_format='YYYY-MM-DD', style={'width': '60%', 'margin': 'auto'}),
+        html.Div([
             html.Div(children=[dcc.Graph(id='scatter-graph')], style={'width': '48%', 'display': 'inline-block', 'padding': '10px'}),
             html.Div(children=[dcc.Graph(id='pie-chart')], style={'width': '48%', 'display': 'inline-block', 'padding': '10px'}),
-        ],
-        style={'display': 'flex', 'justify-content': 'space-between', 'flex-wrap': 'wrap', 'padding': '10px'}
-    ),
-    html.Div(
-        children=[
+        ], style={'display': 'flex', 'justify-content': 'space-between', 'flex-wrap': 'wrap', 'padding': '10px'}),
+        html.Div([
             html.Div(children=[dcc.Graph(id='bar-chart')], style={'width': '48%', 'display': 'inline-block', 'padding': '10px'}),
             html.Div(children=[dcc.Graph(id='monthly-bar-chart')], style={'width': '48%', 'display': 'inline-block', 'padding': '10px'}),
-        ],
-        style={'display': 'flex', 'justify-content': 'space-between', 'flex-wrap': 'wrap', 'padding': '10px'}
-    ),
-    # Add new graph for Project Type vs. margin
-    html.Div(
-        children=[
-            html.Div(children=[dcc.Graph(id='project-type-bar-chart')], style={'width': '100%', 'padding': '10px'}),
-        ],
-        style={'padding': '10px'}
-    ),
-    # Add new graph for Margin Over Time
-    html.Div(
-        children=[
-            html.Div(children=[dcc.Graph(id='margin-over-time-graph')], style={'width': '100%', 'padding': '10px'}),
-        ],
-        style={'padding': '10px'}
-    ),
-
-    # New Section: Cost Structure Analysis 2023
-    html.H2(children='Cost Structure Analysis 2023', style={'textAlign': 'center', 'color': '#003366', 'padding-top': '20px'}),
-
-    # Dropdown specifically for the cost structure graph
-    html.Div(
-        children=[
-            dcc.Dropdown(
-                id='cost-pl-type-filter',
-                options=cost_pl_type_options,
-                value=[pl_type['value'] for pl_type in cost_pl_type_options],
-                multi=True,
-                style={'width': '50%', 'margin': 'auto'}
-            )
-        ],
-        style={'padding': '10px', 'textAlign': 'center'}
-    ),
-
-    # Graphs for Cost Structure Analysis
-    html.Div(
-        children=[
+        ], style={'display': 'flex', 'justify-content': 'space-between', 'flex-wrap': 'wrap', 'padding': '10px'}),
+        html.Div(children=[dcc.Graph(id='project-type-bar-chart')], style={'width': '100%', 'padding': '10px'}),
+        html.Div(children=[dcc.Graph(id='margin-over-time-graph')], style={'width': '100%', 'padding': '10px'}),
+        
+        html.H2(children='Cost Structure Analysis 2023', style={'textAlign': 'center', 'color': '#003366', 'padding-top': '20px'}),
+        dcc.Dropdown(id='cost-pl-type-filter', options=cost_pl_type_options, value=[pl_type['value'] for pl_type in cost_pl_type_options], multi=True, style={'width': '50%', 'margin': 'auto'}),
+        html.Div([
             html.Div(children=[dcc.Graph(id='cost-bar-chart')], style={'width': '48%', 'display': 'inline-block', 'padding': '10px'}),
-            html.Div(children=[dcc.Graph(id='cost-sunburst-chart')], style={'width': '48%', 'display': 'inline-block', 'padding': '10px'}),  # New Sunburst chart
-        ],
-        style={'display': 'flex', 'justify-content': 'space-between', 'flex-wrap': 'wrap', 'padding': '10px'}
-    ),
+            html.Div(children=[dcc.Graph(id='cost-sunburst-chart')], style={'width': '48%', 'display': 'inline-block', 'padding': '10px'}),
+        ], style={'display': 'flex', 'justify-content': 'space-between', 'flex-wrap': 'wrap', 'padding': '10px'}),
+        
+        html.H2(children='Aggregated Margin and Revenue Data', style={'textAlign': 'center', 'color': '#003366', 'padding-top': '20px'}),
+        dash_table.DataTable(id='aggregated-table', columns=[{'name': 'P&L Type', 'id': 'P&L Type'}, {'name': 'margin', 'id': 'margin'}, {'name': 'Total Revenue In year', 'id': 'Total Revenue In year'}, {'name': 'margin ratio', 'id': 'margin ratio'}], page_size=10, style_table={'overflowX': 'auto'}, style_cell={'textAlign': 'left', 'padding': '5px'}, style_header={'backgroundColor': 'lightblue', 'fontWeight': 'bold'})
+    ], style={'backgroundColor': '#E6F0FF', 'padding': '20px'}),
+    
+    # RFM Layout Section
+    html.Div(children=[
+        html.H1(children='Cluster Analysis Dashboard', style={'textAlign': 'center', 'color': '#003366'}),
+        html.Div(children='''
+            This dashboard shows the Elbow Method and Cluster Scatter Matrix.
+        ''', style={'textAlign': 'center', 'color': '#003366'}),
+        dcc.Dropdown(id='cluster-dropdown', options=[{'label': str(cluster), 'value': cluster} for cluster in sorted(rfm['Cluster'].unique())], value=None, multi=True, placeholder="Select clusters to filter..."),
+        html.Div([
+            html.Div(children=[dcc.Graph(id='elbow-graph', figure=fig_elbow)], style={'width': '50%', 'display': 'inline-block'}),
+            html.Div(children=[dcc.Graph(id='scatter-graph-2', figure=fig_scatter)], style={'width': '50%', 'display': 'inline-block'}),
+        ], style={'display': 'flex', 'flex-wrap': 'wrap'}),
+        html.Div([
+            html.Div(children=[dcc.Graph(id='bar-graph', figure=fig_bar)], style={'width': '50%', 'display': 'inline-block'}),
+            html.Div(children=[
+                dcc.Graph(id='monetary-frequency-scatter', figure=fig_monetary_vs_frequency)
+            ], style={'width': '50%', 'display': 'inline-block'}),
+            html.Div(children=[
+                dash_table.DataTable(
+                    id='rfm-table',
+                    columns=[{"name": i, "id": i} for i in rfm.columns],
+                    data=rfm.to_dict('records'),
+                    page_size=10,
+                    style_table={'overflowX': 'auto'},
+                    style_cell={'textAlign': 'left', 'padding': '5px'},
+                    style_header={'backgroundColor': 'lightblue', 'fontWeight': 'bold'}
+                )
+            ], style={'width': '100%', 'display': 'inline-block', 'verticalAlign': 'top'})
+        ], style={'display': 'flex', 'flex-wrap': 'wrap'})
+    ], style={'backgroundColor': '#E6F0FF', 'padding': '20px'})
+])
 
-    # New table for showing group_mar data
-    html.H2(children='Aggregated Margin and Revenue Data', style={'textAlign': 'center', 'color': '#003366', 'padding-top': '20px'}),
-    html.Div(
-        children=[
-            dash_table.DataTable(
-                id='aggregated-table',
-                columns=[
-                    {'name': 'P&L Type', 'id': 'P&L Type'},
-                    {'name': 'Margin', 'id': 'margin'},
-                    {'name': 'Total Revenue In year', 'id': 'Total Revenue In year'},
-                    {'name': 'margin ratio', 'id': 'margin ratio'}
-                ],
-                data=[],
-                page_size=10,
-                style_table={'overflowX': 'auto', 'margin': 'auto'},
-                style_cell={'textAlign': 'left', 'padding': '5px'},
-                style_header={'backgroundColor': 'lightblue', 'fontWeight': 'bold'}
-            )
-        ],
-        style={'width': '80%', 'margin': 'auto', 'padding': '20px'}
-    )
-], style={'backgroundColor': '#E6F0FF', 'font-family': 'Arial'})
 
-# Define the callbacks to update graphs based on filter
+# Define the callbacks for MCA app
 @app.callback(
-    [Output('scatter-graph', 'figure'),
-     Output('pie-chart', 'figure'),
-     Output('bar-chart', 'figure'),
-     Output('monthly-bar-chart', 'figure'),
-     Output('project-type-bar-chart', 'figure'),
-     Output('margin-over-time-graph', 'figure'),
-     Output('cost-bar-chart', 'figure'),
-     Output('cost-sunburst-chart', 'figure'),  # New output for sunburst chart
-     Output('aggregated-table', 'data')],
-    [Input('pl-type-filter', 'value'),
-     Input('date-picker-range', 'start_date'),
-     Input('date-picker-range', 'end_date'),
+    [Output('scatter-graph', 'figure'), Output('pie-chart', 'figure'), Output('bar-chart', 'figure'),
+     Output('monthly-bar-chart', 'figure'), Output('project-type-bar-chart', 'figure'), Output('margin-over-time-graph', 'figure'),
+     Output('cost-bar-chart', 'figure'), Output('cost-sunburst-chart', 'figure'), Output('aggregated-table', 'data')],
+    [Input('pl-type-filter', 'value'), Input('date-picker-range', 'start_date'), Input('date-picker-range', 'end_date'),
      Input('cost-pl-type-filter', 'value')]
 )
 def update_graphs(selected_pl_types, start_date, end_date, selected_cost_pl_types):
@@ -277,7 +233,32 @@ def update_graphs(selected_pl_types, start_date, end_date, selected_cost_pl_type
 
     return scatter_fig, pie_fig, bar_fig, monthly_bar_fig, fig_Project_Type, fig_margin, fig_cost, sunburst_fig, table_data
 
+# Define the callbacks for RFM app
+@app.callback(
+    [Output('scatter-graph-2', 'figure'), Output('bar-graph', 'figure'), Output('monetary-frequency-scatter', 'figure'), Output('rfm-table', 'data')],
+    [Input('cluster-dropdown', 'value')]
+)
+def update_output(selected_clusters):
+    if selected_clusters is None or len(selected_clusters) == 0:
+        filtered_rfm = rfm
+    else:
+        filtered_rfm = rfm[rfm['Cluster'].isin(selected_clusters)]
+    
+    # Update scatter matrix
+    fig_scatter = px.scatter_matrix(filtered_rfm, dimensions=['Recency', 'Frequency', 'Monetary'], color='Cluster', title='Cluster Scatter Matrix')
 
+    # Update scatter plot for Monetary vs Frequency
+    fig_monetary_vs_frequency = px.scatter(filtered_rfm, x='Frequency', y='Monetary', color='Cluster', size='Monetary', 
+                                           title='Monetary vs Frequency Scatter Plot', size_max=100)
+
+    # Update bar chart
+    group = filtered_rfm.groupby(['Cluster'])['Monetary'].sum().reset_index()
+    fig_bar = px.bar(group, x='Cluster', y='Monetary', color='Cluster', title='Total Monetary by Cluster')
+
+    # Update table
+    table_data = filtered_rfm.to_dict('records')
+    
+    return fig_scatter, fig_bar, fig_monetary_vs_frequency, table_data
 
 if __name__ == '__main__':
     app.run_server(debug=True)
